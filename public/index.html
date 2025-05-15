@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Hello, World!</title>
+	</head>
+	<body>
+		<h1 id="heading"></h1>
+
+		<!-- handle input with browser js -->
+		<form id="getYoutube">
+			<input id="youtubeString" type="text" name="url" placeholder="Enter YouTube URL" />
+			<button type="submit">Get Video</button>
+		</form>
+		<output id="ythistory" for="youtubeString"></output>
+
+		<hr>
+		<!-- <button id="button" type="button">Fetch a random UUID</button>
+		<output id="random" for="button"></output> -->
+		<hr>
+		<button id="display" type="button">display localStorage</button>
+		<button id="reset" type="button">reset localStorage</button>
+		<script>
+async function fetchText(url) {
+  const response = await fetch(url
+	, {
+    method: 'GET',
+    mode: 'cors',
+})
+
+  return await response.text()
+}
+const unescapeHTMLentities = (str) => {
+  const reEscape = /&(?:apos|#39|quot|#34|lt|#60|gt|#62|amp|#38);/g
+  return str.replace(reEscape, (tag)=>({
+    '&apos;':"'",
+    '&#39;':"'",
+    '&quot;':'"',
+    '&#34;':'"',
+    '&lt;':'<',
+    '&#60;':'<',
+    '&gt;':'>',
+    '&#62;':'>',
+    '&amp;':'&',
+    '&#38;':'&',
+  })[tag]
+  )
+}
+
+async function getSubtitles({
+  videoID = '9W0Dy1nM-zU',
+  lang = 'en',
+}) {
+  const data = await fetchText(
+    `https://youtube.com/watch?v=${videoID}`
+  )
+  // * ensure we have access to captions data
+  if (!data.includes('captionTracks'))
+    throw new Error(`Could not find captions for video: ${videoID}`);
+
+  const regex =  /"captionTracks":(\[.*?\])/
+  const [match] = regex.exec(data)
+  console.log(match)
+  const { captionTracks } = JSON.parse(`{${match}}`)
+  console.log(captionTracks)
+  const subtitle = captionTracks.find( ({ vssId }) => vssId && vssId.match(`.${lang}`) )
+
+  // * ensure we have found the correct subtitle lang
+  if (!subtitle || (subtitle && !subtitle.baseUrl))
+    throw new Error(`Could not find ${lang} captions for ${videoID}`);
+
+  const transcript = await fetchText(subtitle.baseUrl);
+
+  let timedtext = []
+  const startRegex = /start="([\d.]+)"/;
+  const durRegex = /dur="([\d.]+)"/
+  transcript
+    .replace('<?xml version="1.0" encoding="utf-8" ?><transcript>', '')
+    .replace(/&lt;font color=&quot;#......&quot;&gt;/gi, '')
+    .replace(/&lt;\/font&gt;/gi, '')
+    // .replace(/&amp;/gi, '&') done
+    .replace('</transcript>', '')
+    .split('</text>')
+    .filter(line => line && line.trim())
+    .map( (line, i) =>{
+      let cue = {}
+      const [, start] = startRegex.exec(line)
+      cue.s = parseFloat(start)
+      const [, dur] = durRegex.exec(line)
+      cue.d = parseFloat(dur)
+      const htmlText = line.replace(/<text.+>/, '')
+      cue.t = unescapeHTMLentities(htmlText)
+      timedtext[i] = cue
+    })
+
+  return {
+    videoID,
+    lang,
+    datePull:  Date.now(),
+    timedtext,
+  }
+}
+
+
+			// fetch('/message')
+			// 	.then((resp) => resp.text())
+			// 	.then((text) => {
+			// 		const h1 = document.getElementById('heading')
+			// 		h1.textContent = text
+			// 	})
+
+			const getYoutube = document.getElementById('getYoutube')
+			getYoutube.onsubmit = function (){
+				
+				const ytStr = document.getElementById('youtubeString').value
+
+				// find youtube video id from url
+				const videoId = ''
+				if ( /(?<domain>youtu.be|youtube.com)(?:\/)/.test(ytStr) ){
+					// https://regex101.com/r/un1RSi/2
+					const capture = /((?:\/|v=|vi=|v%)(?<id>([\-\w]){10,14}))/.exec(ytStr)
+					const {id} = capture.groups
+					console.log('videoId', ytStr, capture.groups, id)
+
+					// get subtitles
+					getSubtitles({ videoID: id }).then(res => console.log('res -> ', res)).catch(err => console.log('err -> ', err));
+
+					// const subtitles = await getSubtitles({ videoID: id })
+					// console.log('subtitles -> ', subtitles);
+
+					// save result as array in localStorage
+					const lStore = localStorage.getItem('ytid')
+					if (lStore) {
+						const lStoreArray = JSON.parse(lStore)
+						lStoreArray.push(id)
+						localStorage.setItem('ytid', JSON.stringify(lStoreArray))
+					} else {
+						localStorage.setItem('ytid', JSON.stringify([id]))
+					}
+					document.getElementById('ythistory').textContent = localStorage.getItem('ytid')
+				}
+				return false
+			}
+
+			// const button = document.getElementById("button")
+			// button.addEventListener("click", () => {
+			// 	fetch('/random')
+			// 		.then((resp) => resp.text())
+			// 		.then((text) => {
+			// 			// save result as array in localStorage
+			// 			const random = document.getElementById('random')
+			// 			const lStore = localStorage.getItem('rnd')
+			// 			if (lStore) {
+			// 				const lStoreArray = JSON.parse(lStore)
+			// 				lStoreArray.push(text)
+			// 				localStorage.setItem('rnd', JSON.stringify(lStoreArray))
+			// 			} else {
+			// 				localStorage.setItem('rnd', JSON.stringify([text]))
+			// 			}
+			// 			random.textContent = localStorage.getItem('rnd')
+			// 		})
+			// })
+
+			const display = document.getElementById('display')
+			display.addEventListener('click', () => {
+				// document.getElementById('random').textContent = localStorage.getItem('rnd')
+				document.getElementById('ythistory').textContent = localStorage.getItem('ytid')
+			})
+
+			const reset = document.getElementById('reset')
+			reset.addEventListener('click', () => {
+				localStorage.clear()
+				// document.getElementById('random').textContent = localStorage.getItem('rnd')
+				document.getElementById('ythistory').textContent = localStorage.getItem('ytid')
+			})
+		</script>
+	</body>
+</html>
