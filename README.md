@@ -2,9 +2,9 @@
 
 ## Bug
 
-When using JS frontend code, Wranger causes a CORS error that can not be remedied.
+When using JS frontend code, Wrangler run locally in Dev mode causes a CORS error that can not be remedied.
 
-But when I use the the same local HTML directly in the browser, it works as intended, with the results of the API call.  Also works correctly [deployed](https://video-transcript.video.workers.dev/).
+But when I use the the same local HTML directly in the browser, it works as intended, with the results of the API call. (see console.log)  Also works correctly [deployed](https://video-transcript.video.workers.dev/).
 
 ## Attempted fixes
 
