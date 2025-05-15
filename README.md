@@ -6,6 +6,8 @@ When using JS frontend code, Wrangler run locally in Dev mode causes a CORS erro
 
 But when I use the the same local HTML directly in the browser, it works as intended, with the results of the API call. (see console.log)  Also works correctly [deployed](https://video-transcript.video.workers.dev/).
 
+submitted bug: https://github.com/cloudflare/workers-sdk/issues/9276
+
 ## Attempted fixes
 
 In `public\_headers`, `Access-Control-Allow-Origin: *`
