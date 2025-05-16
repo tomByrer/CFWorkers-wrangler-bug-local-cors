@@ -8,6 +8,11 @@ But when I use the the same local HTML directly in the browser, it works as inte
 
 submitted bug: https://github.com/cloudflare/workers-sdk/issues/9276
 
+#### Testing
+
+Put a YouTube video URL (with video ID) into the input field.
+When you click the button, in the console you should see JSON response.
+
 ## Attempted fixes
 
 In `public\_headers`, `Access-Control-Allow-Origin: *`
